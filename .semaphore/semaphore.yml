@@ -16,9 +16,9 @@ blocks:
         commands:
           - checkout
       jobs:
-        - name: Scalastyle and Scalafmt
+        - name: Scalafmt
           commands:
-            - sbt scalastyle fmtCheck
+            - sbt fmtCheck
         - name: Scalafix
           commands:
             - cd scalafix && sbt tests/test
