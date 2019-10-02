@@ -72,9 +72,6 @@ blocks:
   - name: Misc
     dependencies:
       - Linting
-    prologue:
-      commands:
-        - checkout
     task:
       jobs:
         - name: Scalafix
@@ -82,8 +79,12 @@ blocks:
             - cd scalafix && sbt tests/test
         - name: Check binary compatibility
           commands:
-            - sbt ++$TRAVIS_SCALA_VERSION! validateBC
+            - sbt ++$SCALA_VERSION! validateBC
           matrix:
-            - env_var: TRAVIS_SCALA_VERSION
+            - env_var: SCALA_VERSION
               values:
                 - 2.12.9
+                - 2.13.0
+      prologue:
+        commands:
+          - checkout
