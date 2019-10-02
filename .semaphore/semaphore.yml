@@ -72,6 +72,9 @@ blocks:
   - name: Misc
     dependencies:
       - Linting
+    prologue:
+      commands:
+        - checkout
     task:
       jobs:
         - name: Scalafix
