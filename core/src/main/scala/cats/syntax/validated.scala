@@ -1,7 +1,7 @@
 package cats
 package syntax
 
-import cats.data.{Validated, ValidatedNec, ValidatedNel}
+import cats.data.{Validated, ValidatedNeSeq, ValidatedNec, ValidatedNel, ValidatedNes, ValidatedNev}
 
 trait ValidatedSyntax {
   implicit final def catsSyntaxValidatedId[A](a: A): ValidatedIdSyntax[A] = new ValidatedIdSyntax(a)
@@ -10,8 +10,15 @@ trait ValidatedSyntax {
 final class ValidatedIdSyntax[A](private val a: A) extends AnyVal {
   def valid[B]: Validated[B, A] = Validated.Valid(a)
   def validNel[B]: ValidatedNel[B, A] = Validated.Valid(a)
+  def validNes[B](implicit order: Order[A]): ValidatedNes[B, A] = Validated.Valid(a)
+  def validNeSeq[B]: ValidatedNeSeq[B, A] = Validated.Valid(a)
+  def validNev[B]: ValidatedNev[B, A] = Validated.Valid(a)
+
   def invalid[B]: Validated[A, B] = Validated.Invalid(a)
   def invalidNel[B]: ValidatedNel[A, B] = Validated.invalidNel(a)
+  def invalidNes[B](implicit order: Order[A]): ValidatedNes[A, B] = Validated.invalidNes(a)
+  def invalidNeSeq[B]: ValidatedNeSeq[A, B] = Validated.invalidNeSeq(a)
+  def invalidNev[B]: ValidatedNev[A, B] = Validated.invalidNev(a)
 }
 
 trait ValidatedExtensionSyntax {
