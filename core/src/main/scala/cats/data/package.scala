@@ -2,14 +2,21 @@ package cats
 
 package object data extends ScalaVersionSpecificPackage {
 
-  type ValidatedNel[+E, +A] = Validated[NonEmptyList[E], A]
-  type IorNel[+B, +A] = Ior[NonEmptyList[B], A]
-  type IorNec[+B, +A] = Ior[NonEmptyChain[B], A]
-  type IorNes[B, +A] = Ior[NonEmptySet[B], A]
-  type EitherNel[+E, +A] = Either[NonEmptyList[E], A]
   type EitherNec[+E, +A] = Either[NonEmptyChain[E], A]
+  type EitherNel[+E, +A] = Either[NonEmptyList[E], A]
   type EitherNes[E, +A] = Either[NonEmptySet[E], A]
+  type EitherNeSeq[+E, +A] = Either[NonEmptySeq[E], A]
+  type EitherNev[+E, +A] = Either[NonEmptyVector[E], A]
+  type IorNec[+B, +A] = Ior[NonEmptyChain[B], A]
+  type IorNel[+B, +A] = Ior[NonEmptyList[B], A]
+  type IorNes[B, +A] = Ior[NonEmptySet[B], A]
+  type IorNeSeq[+B, +A] = Ior[NonEmptySeq[B], A]
+  type IorNev[+B, +A] = Ior[NonEmptyVector[B], A]
   type ValidatedNec[+E, +A] = Validated[NonEmptyChain[E], A]
+  type ValidatedNel[+E, +A] = Validated[NonEmptyList[E], A]
+  type ValidatedNes[E, +A] = Validated[NonEmptySet[E], A]
+  type ValidatedNeSeq[+E, +A] = Validated[NonEmptySeq[E], A]
+  type ValidatedNev[+E, +A] = Validated[NonEmptyVector[E], A]
 
   type NonEmptyMap[K, +A] = NonEmptyMapImpl.Type[K, A]
   val NonEmptyMap = NonEmptyMapImpl
