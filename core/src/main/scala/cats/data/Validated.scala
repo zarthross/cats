@@ -7,7 +7,7 @@ import cats.kernel.CommutativeSemigroup
 import scala.reflect.ClassTag
 import scala.util.{Failure, Success, Try}
 
-sealed abstract class Validated[+E, +A] extends Product with Serializable {
+sealed abstract class Validated[+E, +A] extends Product with Serializable with ScalaVersionSpecificValidated[E, A] {
 
   /**
    * Example:
@@ -359,6 +359,75 @@ sealed abstract class Validated[+E, +A] extends Product with Serializable {
       case v @ Valid(_) => v
       case Invalid(e)   => Validated.invalidNec(e)
     }
+
+  /**
+   * Lift the Invalid value into a NonEmptyVector.
+   *
+   * Example:
+   * {{{
+   * scala> import cats.implicits._
+   *
+   * scala> val v1 = "error".invalid[Int]
+   * scala> val v2 = 123.valid[String]
+   *
+   * scala> v1.toValidatedNev
+   * res0: ValidatedNev[String, Int] = Invalid(Vector(error))
+   *
+   * scala> v2.toValidatedNev
+   * res1: ValidatedNec[String, Int] = Valid(123)
+   * }}}
+   */
+  def toValidatedNev[EE >: E, AA >: A]: ValidatedNev[EE, AA] =
+    this match {
+      case v @ Valid(_) => v
+      case Invalid(e)   => Validated.invalidNev(e)
+    }
+
+  /**
+   * Lift the Invalid value into a NonEmptySet.
+   *
+   * Example:
+   * {{{
+   * scala> import cats.implicits._
+   *
+   * scala> val v1 = "error".invalid[Int]
+   * scala> val v2 = 123.valid[String]
+   *
+   * scala> v1.toValidatedNes
+   * res0: ValidatedNes[String, Int] = Invalid(Set(error))
+   *
+   * scala> v2.toValidatedNes
+   * res1: ValidatedNes[String, Int] = Valid(123)
+   * }}}
+   */
+  def toValidatedNes[EE >: E, AA >: A](implicit order: Order[EE]): ValidatedNes[EE, AA] =
+    this match {
+      case v @ Valid(_) => v
+      case Invalid(e)   => Validated.invalidNes(e)
+  }
+
+  /**
+   * Lift the Invalid value into a NonEmptySeq.
+   *
+   * Example:
+   * {{{
+   * scala> import cats.implicits._
+   *
+   * scala> val v1 = "error".invalid[Int]
+   * scala> val v2 = 123.valid[String]
+   *
+   * scala> v1.toValidatedNeSeq
+   * res0: ValidatedNeSeq[String, Int] = Invalid(Set(error))
+   *
+   * scala> v2.toValidatedNeSeq
+   * res1: ValidatedNeSeq[String, Int] = Valid(123)
+   * }}}
+   */
+  def toValidatedNeSeq[EE >: E, AA >: A](implicit order: Order[EE]): ValidatedNeSeq[EE, AA] =
+    this match {
+      case v @ Valid(_) => v
+      case Invalid(e)   => Validated.invalidNeSeq(e)
+  }
 
   /**
    * Convert to an Either, apply a function, convert back.  This is handy
@@ -1054,7 +1123,7 @@ private[data] class ValidatedApplicative[E: Semigroup] extends CommutativeApplic
   override def unit: Validated[E, Unit] = Validated.validUnit
 }
 
-private[data] trait ValidatedFunctions {
+private[data] trait ValidatedFunctions extends ScalaVersionSpecificValidatedFunctions {
 
   /**
    * Converts an `E` to a `Validated[E, A]`.
@@ -1076,7 +1145,40 @@ private[data] trait ValidatedFunctions {
    * res0: ValidatedNel[IllegalArgumentException, String] = Invalid(NonEmptyList(java.lang.IllegalArgumentException: Argument is nonzero))
    * }}}
    */
-  def invalidNel[E, A](e: E): ValidatedNel[E, A] = Validated.Invalid(NonEmptyList(e, Nil))
+  def invalidNel[E, A](e: E): ValidatedNel[E, A] = Validated.Invalid(NonEmptyList.one(e))
+
+  /**
+   * Converts an `E` to a `ValidatedNeSeq[E, A]`.
+   *
+   * For example:
+   * {{{
+   * scala> Validated.invalidNeSeq[IllegalArgumentException, String](new IllegalArgumentException("Argument is nonzero"))
+   * res0: ValidatedNeSeq[IllegalArgumentException, String] = Invalid(NonEmptySeq(java.lang.IllegalArgumentException: Argument is nonzero))
+   * }}}
+   */
+  def invalidNeSeq[E, A](e: E): ValidatedNeSeq[E, A] = Validated.Invalid(NonEmptySeq.one(e))
+
+  /**
+   * Converts an `E` to a `ValidatedNes[E, A]`.
+   *
+   * For example:
+   * {{{
+   * scala> Validated.invalidNes[IllegalArgumentException, String](new IllegalArgumentException("Argument is nonzero"))
+   * res0: ValidatedNes[IllegalArgumentException, String] = Invalid(NonEmptySet(java.lang.IllegalArgumentException: Argument is nonzero))
+   * }}}
+   */
+  def invalidNes[E, A](e: E)(implicit O: Order[E]): ValidatedNes[E, A] = Validated.Invalid(NonEmptySet.one(e))
+
+  /**
+   * Converts an `E` to a `ValidatedNev[E, A]`.
+   *
+   * For example:
+   * {{{
+   * scala> Validated.invalidNev[IllegalArgumentException, String](new IllegalArgumentException("Argument is nonzero"))
+   * res0: ValidatedNev[IllegalArgumentException, String] = Invalid(NonEmptyVector(java.lang.IllegalArgumentException: Argument is nonzero))
+   * }}}
+   */
+  def invalidNev[E, A](e: E): ValidatedNev[E, A] = Validated.Invalid(NonEmptyVector.one(e))
 
   /**
    * Converts a `A` to a `Validated[E, A]`.
@@ -1099,6 +1201,39 @@ private[data] trait ValidatedFunctions {
    * }}}
    */
   def validNel[E, A](a: A): ValidatedNel[E, A] = Validated.Valid(a)
+
+  /**
+   * Converts a `A` to a `ValidatedNeSeq[E, A]`.
+   *
+   * For example:
+   * {{{
+   * scala> Validated.validNeSeq[IllegalArgumentException, String]("Hello world")
+   * res0: ValidatedNeSeq[IllegalArgumentException, String] = Valid(Hello world)
+   * }}}
+   */
+  def validNeSeq[E, A](a: A): ValidatedNeSeq[E, A] = Validated.Valid(a)
+
+  /**
+   * Converts a `A` to a `ValidatedNes[E, A]`.
+   *
+   * For example:
+   * {{{
+   * scala> Validated.validNes[IllegalArgumentException, String]("Hello world")
+   * res0: ValidatedNes[IllegalArgumentException, String] = Valid(Hello world)
+   * }}}
+   */
+  def validNes[E, A](a: A)(implicit O: Order[E]): ValidatedNes[E, A] = Validated.Valid(a)
+
+  /**
+   * Converts a `A` to a `ValidatedNev[E, A]`.
+   *
+   * For example:
+   * {{{
+   * scala> Validated.validNev[IllegalArgumentException, String]("Hello world")
+   * res0: ValidatedNev[IllegalArgumentException, String] = Valid(Hello world)
+   * }}}
+   */
+  def validNev[E, A](a: A): ValidatedNev[E, A] = Validated.Valid(a)
 
   def catchNonFatal[A](f: => A): Validated[Throwable, A] =
     try {
@@ -1145,6 +1280,27 @@ private[data] trait ValidatedFunctions {
    */
   final def condNel[E, A](test: Boolean, a: => A, e: => E): ValidatedNel[E, A] =
     if (test) validNel(a) else invalidNel(e)
+
+  /**
+   * If the condition is satisfied, return the given `A` as valid NES,
+   * otherwise return the given `E` as invalid NES.
+   */
+  final def condNes[E, A](test: Boolean, a: => A, e: => E)(implicit order: Order[E]): ValidatedNes[E, A] =
+    if (test) validNes(a) else invalidNes(e)
+
+  /**
+   * If the condition is satisfied, return the given `A` as valid NonEmptySeq,
+   * otherwise return the given `E` as invalid NonEmptySeq.
+   */
+  final def condNeSeq[E, A](test: Boolean, a: => A, e: => E)(implicit order: Order[E]): ValidatedNeSeq[E, A] =
+    if (test) validNeSeq(a) else invalidNeSeq(e)
+
+  /**
+   * If the condition is satisfied, return the given `A` as valid NEV,
+   * otherwise return the given `E` as invalid NEV.
+   */
+  final def condNev[E, A](test: Boolean, a: => A, e: => E): ValidatedNev[E, A] =
+    if (test) validNev(a) else invalidNev(e)
 }
 
 private[data] trait ValidatedFunctionsBinCompat0 {
