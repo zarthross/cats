@@ -11,7 +11,7 @@ import cats.syntax.EitherUtil
  * `EitherT[F, A, B]` wraps a value of type `F[Either[A, B]]`. An `F[C]` can be lifted in to `EitherT[F, A, C]` via `EitherT.right`,
  * and lifted in to a `EitherT[F, C, B]` via `EitherT.left`.
  */
-final case class EitherT[F[_], A, B](value: F[Either[A, B]]) {
+final case class EitherT[F[_], A, B](value: F[Either[A, B]]) extends ScalaVersionSpecificEitherT[F,A,B] {
 
   /**
    * Transform this `EitherT[F, A, B]` into a `F[C]`.
@@ -562,6 +562,24 @@ final case class EitherT[F[_], A, B](value: F[Either[A, B]]) {
       case Left(a)  => Validated.invalidNec(a)
     }
 
+  def toValidatedNes[AA >: A](implicit F: Functor[F], O: Order[AA]): F[ValidatedNes[AA, B]] =
+    F.map(value) {
+      case Right(b) => Validated.valid(b)
+      case Left(a)  => Validated.invalidNes[AA, B](a)
+    }
+
+  def toValidatedNeSeq[AA >: A](implicit F: Functor[F]): F[ValidatedNeSeq[AA, B]] =
+    F.map(value) {
+      case Right(b) => Validated.valid(b)
+      case Left(a)  => Validated.invalidNeSeq[AA, B](a)
+    }
+
+  def toValidatedNev(implicit F: Functor[F]): F[ValidatedNev[A, B]] =
+    F.map(value) {
+      case Right(b) => Validated.valid(b)
+      case Left(a)  => Validated.invalidNev(a)
+    }
+
   /**
    * Run this value as a `[[Validated]]` against the function and convert it back to an `[[EitherT]]`.
    *
@@ -645,6 +663,39 @@ final case class EitherT[F[_], A, B](value: F[Either[A, B]]) {
       F.map(value) {
         case Right(b) => Validated.valid(b)
         case Left(a)  => Validated.invalidNec(a)
+      }
+    )
+
+  /**
+   * Transform this `EitherT[F, A, B]` into a `[[Nested]][F, ValidatedNes[A, *], B]`.
+   */
+  def toNestedValidatedNes(implicit F: Functor[F], order: Order[A]): Nested[F, ValidatedNes[A, *], B] =
+    Nested[F, ValidatedNes[A, *], B](
+      F.map(value) {
+        case Right(b) => Validated.valid(b)
+        case Left(a)  => Validated.invalidNes(a)
+      }
+    )
+
+  /**
+   * Transform this `EitherT[F, A, B]` into a `[[Nested]][F, ValidatedNeSeq[A, *], B]`.
+   */
+  def toNestedValidatedNeSeq(implicit F: Functor[F]): Nested[F, ValidatedNeSeq[A, *], B] =
+    Nested[F, ValidatedNeSeq[A, *], B](
+      F.map(value) {
+        case Right(b) => Validated.valid(b)
+        case Left(a)  => Validated.invalidNeSeq(a)
+      }
+    )
+
+  /**
+   * Transform this `EitherT[F, A, B]` into a `[[Nested]][F, ValidatedNev[A, *], B]`.
+   */
+  def toNestedValidatedNev(implicit F: Functor[F]): Nested[F, ValidatedNev[A, *], B] =
+    Nested[F, ValidatedNev[A, *], B](
+      F.map(value) {
+        case Right(b) => Validated.valid(b)
+        case Left(a)  => Validated.invalidNev(a)
       }
     )
 }
