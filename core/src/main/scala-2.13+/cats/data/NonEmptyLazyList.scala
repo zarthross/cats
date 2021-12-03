@@ -50,6 +50,12 @@ object NonEmptyLazyList extends NonEmptyLazyListInstances {
   def apply[A](a: => A, as: A*): NonEmptyLazyList[A] =
     create(LazyList.concat(LazyList(a), LazyList.from(as)))
 
+  def of[A](a: A, as: A*): NonEmptyLazyList[A] =
+    create(LazyList.concat(LazyList(a), LazyList.from(as)))
+
+  def one[A](a: A): NonEmptyLazyList[A] =
+    create(LazyList(a))
+
   implicit def catsNonEmptyLazyListOps[A](value: NonEmptyLazyList[A]): NonEmptyLazyListOps[A] =
     new NonEmptyLazyListOps(value)
 }
