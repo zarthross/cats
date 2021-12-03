@@ -139,6 +139,16 @@ final class EitherOps[A, B](private val eab: Either[A, B]) extends AnyVal {
       case Right(b) => Validated.valid(b)
     }
 
+  /**
+   * Returns a [[cats.data.ValidatedNes]] representation of this disjunction with the `Left` value
+   * as a single element on the `Invalid` side of the [[cats.data.NonEmptySet]].
+   */
+  def toValidatedNes[AA >: A](implicit order: Order[AA]): ValidatedNes[AA, B] =
+    eab match {
+      case Left(a)  => Validated.invalidNes(a)
+      case Right(b) => Validated.valid(b)
+    }
+
   def withValidated[AA, BB](f: Validated[A, B] => Validated[AA, BB]): Either[AA, BB] =
     f(toValidated).toEither
 
@@ -316,6 +326,10 @@ final class EitherOps[A, B](private val eab: Either[A, B]) extends AnyVal {
 
   def toEitherNel[AA >: A]: EitherNel[AA, B] = leftMap(NonEmptyList.one)
 
+  def toEitherNev[AA >: A]: EitherNev[AA, B] = leftMap(NonEmptyVector.one)
+
+  def toEitherNeSeq[AA >: A]: EitherNeSeq[AA, B] = leftMap(NonEmptySeq.one)
+
   @deprecated("use liftTo instead", "2.0.0")
   def raiseOrPure[F[_]](implicit ev: ApplicativeError[F, A]): F[B] =
     ev.fromEither(eab)
@@ -350,6 +364,14 @@ final class EitherObjectOps(private val either: Either.type) extends AnyVal {
   def leftNel[A, B](a: A): EitherNel[A, B] = Left(NonEmptyList.one(a))
 
   def rightNel[A, B](b: B): EitherNel[A, B] = Right(b)
+
+  def leftNev[A, B](a: A): EitherNev[A, B] = Left(NonEmptyVector.one(a))
+
+  def rightNev[A, B](b: B): EitherNev[A, B] = Right(b)
+
+  def leftNeSeq[A, B](a: A): EitherNeSeq[A, B] = Left(NonEmptySeq.one(a))
+
+  def rightNeSeq[A, B](b: B): EitherNeSeq[A, B] = Right(b)
 
   /**
    * Evaluates the specified block, catching exceptions of the specified type and returning them on the left side of
@@ -448,6 +470,78 @@ final class EitherIdOps[A](private val obj: A) extends AnyVal {
    * }}}
    */
   def rightNel[B]: Either[NonEmptyList[B], A] = Right(obj)
+
+  /**
+   * Wrap a value to a left EitherNes
+   *
+   * For example:
+   * {{{
+   * scala> import cats.implicits._, cats.data.NonEmptySet
+   * scala> "Err".leftNes[Int]
+   * res0: Either[NonEmptySet[String], Int] = Left(NonEmptySet(Err))
+   * }}}
+   */
+  def leftNes[B](implicit order: Order[A]): Either[NonEmptySet[A], B] = Left(NonEmptySet.one(obj))
+
+  /**
+   * Wrap a value to a right EitherNes
+   *
+   * For example:
+   * {{{
+   * scala> import cats.implicits._, cats.data.NonEmptySet
+   * scala> 1.rightNes[String]
+   * res0: Either[NonEmptySet[String], Int] = Right(1)
+   * }}}
+   */
+  def rightNes[B](implicit order: Order[A]): Either[NonEmptySet[B], A] = Right(obj)
+
+  /**
+   * Wrap a value to a left EitherNev
+   *
+   * For example:
+   * {{{
+   * scala> import cats.implicits._, cats.data.NonEmptyVector
+   * scala> "Err".leftNev[Int]
+   * res0: Either[NonEmptyVector[String], Int] = Left(NonEmptyVector(Err))
+   * }}}
+   */
+  def leftNev[B]: Either[NonEmptyVector[A], B] = Left(NonEmptyVector.one(obj))
+
+  /**
+   * Wrap a value to a right EitherNev
+   *
+   * For example:
+   * {{{
+   * scala> import cats.implicits._, cats.data.NonEmptyVector
+   * scala> 1.rightNev[String]
+   * res0: Either[NonEmptyVector[String], Int] = Right(1)
+   * }}}
+   */
+  def rightNev[B]: Either[NonEmptyVector[B], A] = Right(obj)
+
+  /**
+   * Wrap a value to a left EitherNeSeq
+   *
+   * For example:
+   * {{{
+   * scala> import cats.implicits._, cats.data.NonEmptySeq
+   * scala> "Err".leftNeSeq[Int]
+   * res0: Either[NonEmptySeq[String], Int] = Left(NonEmptySeq(Err))
+   * }}}
+   */
+  def leftNeSeq[B]: Either[NonEmptySeq[A], B] = Left(NonEmptySeq.one(obj))
+
+  /**
+   * Wrap a value to a right EitherNeSeq
+   *
+   * For example:
+   * {{{
+   * scala> import cats.implicits._, cats.data.NonEmptySeq
+   * scala> 1.rightNeSeq[String]
+   * res0: Either[NonEmptySeq[String], Int] = Right(1)
+   * }}}
+   */
+  def rightNeSeq[B]: Either[NonEmptySeq[B], A] = Right(obj)
 
 }
 

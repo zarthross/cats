@@ -24,7 +24,7 @@ package object syntax {
   object contravariant extends ContravariantSyntax
   object contravariantSemigroupal extends ContravariantSemigroupalSyntax
   object contravariantMonoidal extends ContravariantMonoidalSyntax
-  object either extends EitherSyntax with EitherSyntaxBinCompat0
+  object either extends EitherSyntax with EitherSyntaxBinCompat0 with ScalaVersionSpecificEitherSyntax
   object eq extends EqSyntax
   object flatMap extends FlatMapSyntax with FlatMapOptionSyntax
   object foldable extends FoldableSyntax with FoldableSyntaxBinCompat0 with FoldableSyntaxBinCompat1
